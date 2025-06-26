@@ -122,7 +122,7 @@ public:
 };
 
 // 重载输入操作符
-istream& operator>>(istream& in, Books* book)
+istream& operator>>(istream& in, Books*& book)
 {
     cout << "请输入图书信息" << endl;
 
@@ -184,27 +184,5 @@ istream& operator>>(istream& in, Books* book)
         cout << "无效的图书类型!" << endl;
         break;
     }
-    return in;
-}
-
-// 为 ScienceBook 实现输入操作符重载
-istream& operator>>(istream& in, ScienceBook& book) {
-    // 从流中读取基本属性
-    in >> book.bookID >> book.name >> book.price >> book.author >> book.publisher >> book.quantity;
-    return in;
-}
-
-// 为 SocialBook 实现输入操作符重载
-istream& operator>>(istream& in, SocialBook& book) {
-    // 从流中读取基本属性
-    in >> book.bookID >> book.name >> book.price >> book.author >> book.publisher >> book.quantity;
-    return in;
-}
-
-// 为 ForeignBook 实现输入操作符重载
-istream& operator>>(istream& in, ForeignBook& book) {
-    // 从流中读取基本属性和语言属性
-    string language;
-    in >> book.bookID >> book.name >> book.price >> book.author >> book.publisher >> book.quantity >> language;
     return in;
 }

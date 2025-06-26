@@ -27,95 +27,53 @@ private:
     }
 
 public:
-    Library()// 读入文件
-    {
-        ifstream file;
-        file.open("library.txt");
-        if (!file.is_open())
-        {
-            cout << "文件打开失败" << endl;
+    Library() {
+        ifstream file("../library.txt");
+        if (!file.is_open()) {
+            cout << "图书文件打开失败" << endl;
             return;
         }
-        string line;
-        while (getline(file, line))
-        {
-            istringstream iss(line);
-            string bookname, bookid,author,publisher;
-            double price;
-            int quantity;
-            iss >> bookname >> bookid ; // 假设文件格式是：书名 图书ID 其他信息
-            if (bookid[0] == 'S')
-            {
-                ScienceBook* book = new ScienceBook();
-                file >> *book;
-                BookList.push_back(book);
-            }
-            else if (bookid[0] == 'H')
-            {
-                SocialBook* book = new SocialBook();
-                file >> *book;
-                BookList.push_back(book);
-            }
-            else if (bookid[0] == 'F')
-            {
-                ForeignBook* book = new ForeignBook();
-                file >> *book;
-                BookList.push_back(book);
+
+        string name, id, author, publisher;
+        double price;
+        int quantity;
+
+        while (file >> name >> id >> price >> author >> publisher >> quantity) {
+            if (id[0] == 'S') {
+                BookList.push_back(new ScienceBook(id, name, price, author, publisher, quantity));
+            } else if (id[0] == 'H') {
+                BookList.push_back(new SocialBook(id, name, price, author, publisher, quantity));
+            } else if (id[0] == 'F') {
+                string language;
+                file >> language; // 外文图书需要额外读取语言
+                BookList.push_back(new ForeignBook(id, name, price, author, publisher, quantity, language));
             }
         }
         file.close();
-        cout << "文件读取成功" << endl;
-        ifstream userfile;
-        userfile.open("userlist.txt");
-        if (!userfile.is_open())
-        {
-            cout << "文件打开失败" << endl;
+        cout << "图书文件读取成功" << endl;
+
+        // 读取借阅记录
+        ifstream userfile("../userlist.txt");
+        if (!userfile.is_open()) {
+            cout << "用户借阅文件不存在或无法打开，将创建新文件" << endl;
             return;
         }
-        string userline;
-        while (getline(userfile, userline))
-        {
-            string username, bookid;
-            chrono::high_resolution_clock::time_point borrowtime, returntime;
-            auto timeFromStream = [](std::istream& is) {
-                std::time_t timeT;
-                is >> timeT;
-                return std::chrono::system_clock::from_time_t(timeT);
-            };
-            userfile >> username >> bookid;
-            borrowtime = timeFromStream(userfile);
-            returntime = timeFromStream(userfile);
-            BorrowList.push_back(Borrow(bookid, username, borrowtime, returntime));
+
+        string username, bookid;
+        time_t borrowTimeT, returnTimeT;
+
+        while (userfile >> username >> bookid >> borrowTimeT >> returnTimeT) {
+            auto borrowTime = chrono::system_clock::from_time_t(borrowTimeT);
+            auto returnTime = chrono::system_clock::from_time_t(returnTimeT);
+            BorrowList.push_back(Borrow(bookid, username,
+                                        chrono::high_resolution_clock::time_point(borrowTime),
+                                        chrono::high_resolution_clock::time_point(returnTime)));
         }
         userfile.close();
     }
-    ~Library()//写入文件
-    {
-        ofstream file,userlist;
-        file.open("../library.txt");
-        userlist.open("../userlist.txt");
-        auto bookit = BookList.begin();
-        auto userit = BorrowList.begin();
-        while (true)
-        {
-            file << bookit->data->getName() << " " << bookit->data->getBookID() << " " << bookit->data->getPrice() << " " << bookit->data->getAuthor() << " " << bookit->data->getPublisher() << " " << bookit->data->getQuantity() << endl;
-            auto timeToString = [](const std::chrono::high_resolution_clock::time_point& time) {
-                std::time_t timeT = std::chrono::system_clock::to_time_t(std::chrono::system_clock::time_point(time));
-                return std::string(std::ctime(&timeT));
-            };
-
-            userlist << userit->data.username() << " " << userit->data.book_id() << " "
-                     << timeToString(userit->data.borrow_time()) << " "
-                     << timeToString(userit->data.return_time()) << endl;
-            if (bookit == BookList.end()&&userit==BorrowList.end())
-            {
-                break;
-            }
-            bookit++;
-            userit++;
-        }
-        file.close();
-        cout << "文件写入成功" << endl;
+    ~Library() {
+        SaveBooksToFile();
+        SaveUsersToFile();
     }
 
     void Add(Books* book) // 添加新图书
@@ -135,6 +93,7 @@ public:
             cout << "新书《" << book->getName() << "》已入库。" << endl;
             BookList.push_back(book);
         }
+        SaveBooksToFile();
     }
 
     void Lend(const string& bookname,const string& username) // 借出图书
@@ -156,6 +115,7 @@ public:
                 cout << "《" << bookname << "》库存不足，无法借出。" << endl;
             }
         }
+        SaveUsersToFile();
     }
 
     void Return(const string& bookname,const string& username) // 归还图书
@@ -189,6 +149,7 @@ public:
             // 图书记录不存在
             cout << "归还失败，图书馆无此图书记录: 《" << bookname << "》" << endl;
         }
+        SaveUsersToFile();
     }
 
     Books* Search(string bookname) // 查找图书
@@ -209,7 +170,6 @@ public:
         cout << "图书馆中没有图书。" << endl;
         return;
     }
-    cout << "\n=============== 图书馆所有图书信息 ===============\n" << endl;
     auto it = BookList.begin();
     while (true)
     {
@@ -254,6 +214,62 @@ public:
         cout << "人文社科图书数量: " << SocialBookNum << endl;
         cout << "外文图书数量: " << ForeignBookNum << endl;
         cout << "==================== 显示完毕 ====================\n" << endl;
+    }
+
+    void SaveBooksToFile()
+    {
+        ofstream file("../library.txt");  // 移除 ../前缀
+        if (!file.is_open()) {
+            cout << "无法打开图书文件进行写入" << endl;
+            return;
+        }
+
+        auto bookit = BookList.begin();
+        while (bookit != BookList.end()) {
+            file << bookit->data->getName() << " "
+                 << bookit->data->getBookID() << " "
+                 << bookit->data->getPrice() << " "
+                 << bookit->data->getAuthor() << " "
+                 << bookit->data->getPublisher() << " "
+                 << bookit->data->getQuantity();
+
+            // 为外文图书额外写入语言信息
+            auto foreignBook = dynamic_cast<ForeignBook*>(bookit->data);
+            if (foreignBook) {
+                file << " " << foreignBook->getLanguage();
+            }
+
+            file << endl;
+            bookit++;
+        }
+        file.close();
+        cout << "图书数据已保存到文件" << endl;
+    }
+
+    void SaveUsersToFile()
+    {
+        ofstream userlist("../userlist.txt");  // 移除 ../前缀
+        if (!userlist.is_open()) {
+            cout << "无法打开用户文件进行写入" << endl;
+            return;
+        }
+
+        auto userit = BorrowList.begin();
+        while (userit != BorrowList.end()) {
+            // 转换时间点为时间戳
+            time_t borrowTimeT = chrono::system_clock::to_time_t(
+                chrono::system_clock::time_point(userit->data.borrow_time()));
+            time_t returnTimeT = chrono::system_clock::to_time_t(
+                chrono::system_clock::time_point(userit->data.return_time()));
+
+            userlist << userit->data.username() << " "
+                    << userit->data.book_id() << " "
+                    << borrowTimeT << " "
+                    << returnTimeT << endl;
+            userit++;
+        }
+        userlist.close();
+        cout << "用户借阅数据已保存到文件" << endl;
     }
 
 };

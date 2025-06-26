@@ -10,13 +10,12 @@ int main()
     while (true)
     {
         cout << "\n=============== 图书管理系统 ===============\n" << endl;
-        cout << "\n=============== 库内图书一览 ===============\n" << endl;
-        lib.ShowAllBooks();
         cout << "1. 添加图书" << endl;
         cout << "2. 借出图书" << endl;
         cout << "3. 归还图书" << endl;
         cout << "4. 查找图书" << endl;
         cout << "5. 显示各类图书数量" << endl;
+        cout << "6. 显示所有图书" << endl;
         cout << "0. 退出系统" << endl;
         cout << "请输入以选择功能: ";
         cin >> choice;
@@ -69,6 +68,11 @@ int main()
         case 5:
             {
                 lib.CountAllBooks();
+                break;
+            }
+        case 6:
+            {
+                lib.ShowAllBooks();
                 break;
             }
         default:
