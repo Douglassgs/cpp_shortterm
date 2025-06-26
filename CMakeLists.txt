@@ -10,8 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 由于 main.cpp 文件通过 #include 指令包含了其他 .cpp 文件，
 # 为了避免链接时出现多重定义错误，add_executable 命令只应包含 main.cpp。
 add_executable(cpp_shortterm main.cpp
-        src/borrow.cpp
-        src/book.cpp)
+)
 
 # 为目标 cpp_shortterm 添加头文件搜索路径。
 # 这使得编译器能够找到 "inc" 目录下的头文件，例如 DoubleLinkedList.hpp。

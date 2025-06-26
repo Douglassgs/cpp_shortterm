@@ -39,9 +39,55 @@ public:
         string line;
         while (getline(file, line))
         {
-            //todo:在这里重载>>操作符读入文件
-            //todo:在这里根据BookId的首字母来判断存入什么派生类
+            istringstream iss(line);
+            string bookname, bookid,author,publisher;
+            double price;
+            int quantity;
+            iss >> bookname >> bookid ; // 假设文件格式是：书名 图书ID 其他信息
+            if (bookid[0] == 'S')
+            {
+                ScienceBook* book = new ScienceBook();
+                file >> *book;
+                BookList.push_back(book);
+            }
+            else if (bookid[0] == 'H')
+            {
+                SocialBook* book = new SocialBook();
+                file >> *book;
+                BookList.push_back(book);
+            }
+            else if (bookid[0] == 'F')
+            {
+                ForeignBook* book = new ForeignBook();
+                file >> *book;
+                BookList.push_back(book);
+            }
         }
+        file.close();
+        cout << "文件读取成功" << endl;
+        ifstream userfile;
+        userfile.open("userlist.txt");
+        if (!userfile.is_open())
+        {
+            cout << "文件打开失败" << endl;
+            return;
+        }
+        string userline;
+        while (getline(userfile, userline))
+        {
+            string username, bookid;
+            chrono::high_resolution_clock::time_point borrowtime, returntime;
+            auto timeFromStream = [](std::istream& is) {
+                std::time_t timeT;
+                is >> timeT;
+                return std::chrono::system_clock::from_time_t(timeT);
+            };
+            userfile >> username >> bookid;
+            borrowtime = timeFromStream(userfile);
+            returntime = timeFromStream(userfile);
+            BorrowList.push_back(Borrow(bookid, username, borrowtime, returntime));
+        }
+        userfile.close();
     }
     ~Library()//写入文件
     {
@@ -91,11 +137,8 @@ public:
         }
     }
 
-    void Lend(const string& bookname) // 借出图书
+    void Lend(const string& bookname,const string& username) // 借出图书
     {
-        string username;
-        cout << "请输入用户名: ";
-        cin >> username;
         //在链表中查找图书
         Books* findbook = Search(bookname);
         if (findbook != nullptr)
@@ -115,7 +158,7 @@ public:
         }
     }
 
-    void Return(const string& bookname) // 归还图书
+    void Return(const string& bookname,const string& username) // 归还图书
     {
         //在链表中查找图书
         Books* findbook = Search(bookname);
@@ -128,7 +171,7 @@ public:
             auto it = BorrowList.begin();
             while (true)
             {
-                if (it->data.book_id() == findbook->getBookID())
+                if ((it->data.book_id() == findbook->getBookID())&&(it->data.username()==username))
                 {
                     auto time=chrono::high_resolution_clock::now();
                     it->data.set_return_time(time);
@@ -212,4 +255,5 @@ public:
         cout << "外文图书数量: " << ForeignBookNum << endl;
         cout << "==================== 显示完毕 ====================\n" << endl;
     }
+
 };
