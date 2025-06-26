@@ -66,6 +66,13 @@ public:
         cout << "图书编号: " << BookId << endl;
         cout << "用户名: " << Username << endl;
         PrintTimeVector(BorrowTime, "借阅时间");
-        PrintTimeVector(ReturnTime, "归还时间");
+        if (ReturnTime == chrono::high_resolution_clock::now())
+        {
+            cout << "归还时间: 未归还" << endl;
+        }
+        else
+        {
+            PrintTimeVector(ReturnTime, "归还时间");
+        }
     }
 };
