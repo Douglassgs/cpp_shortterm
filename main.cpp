@@ -16,6 +16,7 @@ int main()
         cout << "4. 查找图书" << endl;
         cout << "5. 显示各类图书数量" << endl;
         cout << "6. 显示所有图书" << endl;
+        cout << "7. 显示所有借阅记录" << endl;
         cout << "0. 退出系统" << endl;
         cout << "请输入以选择功能: ";
         cin >> choice;
@@ -73,6 +74,11 @@ int main()
         case 6:
             {
                 lib.ShowAllBooks();
+                break;
+            }
+        case 7:
+            {
+                lib.ShowAllBorrows();
                 break;
             }
         default:

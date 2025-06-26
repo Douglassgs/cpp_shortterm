@@ -11,8 +11,6 @@
 
 using namespace std;
 
-string bookname;
-
 class Library
 {
 private:
@@ -218,14 +216,14 @@ public:
 
     void SaveBooksToFile()
     {
-        ofstream file("../library.txt");  // 移除 ../前缀
+        ofstream file("../library.txt");
         if (!file.is_open()) {
             cout << "无法打开图书文件进行写入" << endl;
             return;
         }
 
         auto bookit = BookList.begin();
-        while (bookit != BookList.end()) {
+        while (true) {
             file << bookit->data->getName() << " "
                  << bookit->data->getBookID() << " "
                  << bookit->data->getPrice() << " "
@@ -240,6 +238,9 @@ public:
             }
 
             file << endl;
+            if (bookit == BookList.end()) {
+                break;
+            }
             bookit++;
         }
         file.close();
@@ -255,7 +256,7 @@ public:
         }
 
         auto userit = BorrowList.begin();
-        while (userit != BorrowList.end()) {
+        while (true) {
             // 转换时间点为时间戳
             time_t borrowTimeT = chrono::system_clock::to_time_t(
                 chrono::system_clock::time_point(userit->data.borrow_time()));
@@ -266,10 +267,35 @@ public:
                     << userit->data.book_id() << " "
                     << borrowTimeT << " "
                     << returnTimeT << endl;
+            if (userit == BorrowList.end()) {
+                break;
+            }
             userit++;
         }
         userlist.close();
         cout << "用户借阅数据已保存到文件" << endl;
+    }
+
+    void ShowAllBorrows()// 显示所有借阅记录
+    {
+        if (BorrowList.getLen() == -1)
+        {
+            cout << "没有借阅记录。" << endl;
+            return;
+        }
+        cout << "\n=============== 所有借阅记录 ===============\n" << endl;
+        auto it = BorrowList.begin();
+        while (true)
+        {
+            it->data.ShowMe();
+            cout << "--------------------------------------------------" << endl;
+            if (it == BorrowList.end())
+            {
+                break;
+            }
+            it++;
+        }
+        cout << "==================== 显示完毕 ====================\n" << endl;
     }
 
 };
