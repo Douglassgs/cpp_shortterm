@@ -3,7 +3,8 @@
 //
 
 #include "../inc/DoubleLinkedList.hpp"
-#include "aBook.cpp"//todo:在这里引用Boooks类文件
+#include "Book.cpp"//todo:在这里引用Boooks类文件
+#include "borrow.cpp"
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -16,6 +17,8 @@ class Library
 {
 private:
     DoubleLinkedList<Books*> BookList;
+    DoubleLinkedList<Borrow> BorrowList;
+
     // 查找函数，用于查找图书
     static bool SearchInLibrary(string target, Books* value)
     {
@@ -37,26 +40,33 @@ public:
         while (getline(file, line))
         {
             //todo:在这里重载>>操作符读入文件
+            //todo:在这里根据BookId的首字母来判断存入什么派生类
         }
     }
     ~Library()//写入文件
     {
-        ofstream file;
+        ofstream file,userlist;
         file.open("../library.txt");
-        if (!file.is_open())
-        {
-            cout << "文件打开失败" << endl;
-            return;
-        }
-        auto it = BookList.begin();
+        userlist.open("../userlist.txt");
+        auto bookit = BookList.begin();
+        auto userit = BorrowList.begin();
         while (true)
         {
-            file << it->data->getName() << " " << it->data->getBookID() << " " << it->data->getPrice() << " " << it->data->getAuthor() << " " << it->data->getPublisher() << " " << it->data->getQuantity() << endl;
-            if (it == BookList.end())
+            file << bookit->data->getName() << " " << bookit->data->getBookID() << " " << bookit->data->getPrice() << " " << bookit->data->getAuthor() << " " << bookit->data->getPublisher() << " " << bookit->data->getQuantity() << endl;
+            auto timeToString = [](const std::chrono::high_resolution_clock::time_point& time) {
+                std::time_t timeT = std::chrono::system_clock::to_time_t(std::chrono::system_clock::time_point(time));
+                return std::string(std::ctime(&timeT));
+            };
+
+            userlist << userit->data.username() << " " << userit->data.book_id() << " "
+                     << timeToString(userit->data.borrow_time()) << " "
+                     << timeToString(userit->data.return_time()) << endl;
+            if (bookit == BookList.end()&&userit==BorrowList.end())
             {
                 break;
             }
-            it++;
+            bookit++;
+            userit++;
         }
         file.close();
         cout << "文件写入成功" << endl;
@@ -83,6 +93,9 @@ public:
 
     void Lend(const string& bookname) // 借出图书
     {
+        string username;
+        cout << "请输入用户名: ";
+        cin >> username;
         //在链表中查找图书
         Books* findbook = Search(bookname);
         if (findbook != nullptr)
@@ -92,6 +105,8 @@ public:
             {
                 findbook->setQuantity(number - 1);
                 cout << "《" << bookname << "》借出成功，剩余库存: " << findbook->getQuantity() << endl;
+                auto borrowtime=chrono::high_resolution_clock::now();
+                BorrowList.push_back(Borrow(findbook->getBookID(), username, borrowtime, chrono::high_resolution_clock::time_point()));
             }
             else
             {
@@ -109,6 +124,22 @@ public:
             int number = findbook->getQuantity();
             findbook->setQuantity(number + 1);
             cout << "《" << bookname << "》归还成功，当前库存: " << findbook->getQuantity() << endl;
+            //在借阅记录中添加还书时间
+            auto it = BorrowList.begin();
+            while (true)
+            {
+                if (it->data.book_id() == findbook->getBookID())
+                {
+                    auto time=chrono::high_resolution_clock::now();
+                    it->data.set_return_time(time);
+                    break;
+                }
+                if (it == BorrowList.end())
+                {
+                    break;
+                }
+                it++;
+            }
         }
         else
         {
